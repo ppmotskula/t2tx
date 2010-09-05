@@ -1,0 +1,35 @@
+t2tx Sample Document
+
+
+Document Preamble. This is a paragraph (or several paragraphs) of text
+preceding any headings (h1 to h6).
+
+= Introduction =
+
+This is the first chapter. It starts with a heading (h1) and continues
+until the next heading or the end of the "body" div.
+
+=== Chapter 1 ===
+
+This is a deeper-than-expected chapter. It starts with a h3 and continues until
+the next heading or the end of the "body" div.
+
+= Chapter 2 =
+
+This is a chapter. It starts with a h1 and continues until the next heading or
+the end of the "body" div.
+
+== Chapter 2.1 ==
+
+This is a chapter. It starts with a h2 and continues until the next heading or
+the end of the "body" div.
+
+== Chapter 2.2 ==
+
+This is a chapter. It starts with a h2 and continues until the next heading or
+the end of the "body" div.
+
+= Chapter 3 =
+
+This is the last chapter. It starts with a h1 and continues until the end of
+the "body" div.
