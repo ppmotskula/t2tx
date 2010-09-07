@@ -309,10 +309,10 @@ class Book {
                     if ($_chapter->level() == 0) {
                         continue;
                     }
-                    while($_chapter->level() > $level) {
+                    while ($_chapter->level() > $level) {
                         $toc .= str_repeat("  ", $level++) . "<li><ul>\n";
                     }
-                    while($_chapter->level() < $level) {
+                    while ($_chapter->level() < $level) {
                         $toc .= str_repeat("  ", --$level) . "</ul></li>\n";
                     }
                     $toc .= str_repeat("  ", $level) .
@@ -320,9 +320,18 @@ class Book {
                         ($_chapter->anchor() ? "#{$_chapter->anchor()}" : '') .
                         "\">{$_chapter->title()}</a></li>\n";
                 }
+                // close last open ul-s
+                while ($level > 1) {
+                    $toc .= str_repeat("  ", --$level) . "</ul></li>\n";
+                }
             }
             $toc .= "</ul>\n</div>\n";
-            $this->_toc = $toc;        
+
+            // remove unnecessary li-s around ul-s
+            $toc = preg_replace('#</li>(\n +)<li><ul>#s', '$1<ul>', $toc);
+            $toc = preg_replace('#(\n +)</ul></li>#s', '$1</ul>$1</li>', $toc);
+            
+            $this->_toc = $toc;
         }
         return $this->_toc;
     }
