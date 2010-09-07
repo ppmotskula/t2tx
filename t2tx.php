@@ -18,18 +18,20 @@
  * line, creates a new Book from the input file, and saves the Book.
  */
 
+error_reporting(E_ALL | E_STRICT);
+
 /*
  * global constants
  */
 define('t2tx_PROGID',
     't2tx 1.0 by Peeter P. Mõtsküla <peeterpaul@motskula.net>');
-define('t2tx_FNFORNOHTML', 1);
-define('t2tx_NOT2TXHTML', 2);
-define('t2tx_NOBODY', 3);
-define('t2tx_BADLEVEL', 4);
-define('t2tx_BADCHAPTER', 5);
-define('t2tx_NOCHAPTERS', 6);
-define('t2tx_BADSECTION', 7);
+define('t2tx_FNFORNOHTML',  'not html or file not found');
+define('t2tx_NOT2TXHTML',   'not txt2tags-generated xhtml');
+define('t2tx_NOBODY',       'empty document body');
+define('t2tx_BADLEVEL',     'invalid maxLevel');
+define('t2tx_BADCHAPTER',   'invalid chapter content');
+define('t2tx_NOCHAPTERS',   'no chapters found');
+define('t2tx_BADSECTION',   'invalid section specified');
 
 /**
  * Chapter of a book
@@ -123,7 +125,7 @@ class Book {
     public function __construct($content = NULL, $maxLevel = 1) {
         // check $maxLevel
         if ($maxLevel < 1 || $maxLevel > 6 || intval($maxLevel) != $maxLevel) {
-            error(t2tx_BADLEVEL);
+            throw new Exception(t2tx_BADLEVEL);
         } else {
             $this->_maxLevel = $maxLevel;
         }
@@ -140,12 +142,12 @@ class Book {
         if (preg_match('#<html.*?>.*</html>#s', $html)) {
             $this->_html = $html;
         } else {
-            error(t2tx_FNFORNOHTML);
+            throw new Exception(t2tx_FNFORNOHTML);
         }
 
         // do we have something in document body?
         if (! $body = trim($this->body())) {
-            error(t2tx_NOBODY);
+            throw new Exception(t2tx_NOBODY);
         }
         
         // extract chapters
@@ -178,7 +180,7 @@ class Book {
                     "\" />\n",
                     $matches[0]);
             } else {
-                error(t2tx_NOT2TXHTML);
+                throw new Exception(t2tx_NOT2TXHTML);
             }
         }
         return $this->_htmlHead;
@@ -193,7 +195,7 @@ class Book {
                     $matches)) {
                 $this->_title = $matches[1];
             } else {
-                error(t2tx_NOT2TXHTML);
+                throw new Exception(t2tx_NOT2TXHTML);
             }
         }
         return $this->_title;
@@ -208,7 +210,7 @@ class Book {
                     $this->_html, $matches)) {
                 $this->_header = $matches[1];
             } else {
-                error(t2tx_NOT2TXHTML);
+                throw new Exception(t2tx_NOT2TXHTML);
             }
         }
         return $this->_header;
@@ -225,7 +227,7 @@ class Book {
                     $this->_html, $matches)) {
                 $this->_body = $matches[1];
             } else {
-                error(t2tx_NOT2TXHTML);
+                throw new Exception(t2tx_NOT2TXHTML);
             }
         }
         return $this->_body;
@@ -273,7 +275,6 @@ class Book {
             preg_match("#^($nextHead.*?)(?=$nextHead|$)#s",
                 $body, $matches);
             $chapters[] = new Chapter($matches[0]);
-            ### print_r($matches); readline("hit enter"); ###
             $body = trim(str_replace($matches[0], '', $body));
         }
     }
@@ -287,7 +288,7 @@ class Book {
         if (! $this->_toc) {
             // bail out if no chapters found
             if (! count($this->_chapters)) {
-                error(t2tx_NOCHAPTERS);
+                throw new Exception(t2tx_NOCHAPTERS);
             }
 
             // build table of contents
@@ -332,7 +333,7 @@ class Book {
         // do we have a valid section?
         if ($section < 1 || $section >= count($this->_chapters) ||
                 $section != intval($section)) {
-            error(t2tx_BADSECTION);
+            throw new Exception(t2tx_BADSECTION);
         }
 
         // build navbar
@@ -385,45 +386,6 @@ class Book {
         }
     }
     
-}
-
-/**
- * Exit with error code, optionally displaying an error message
- *
- * @param int $exitCode
- * @param bool $showMessage set to FALSE for quiet operation
- */
-function error($exitCode, $showMessage = TRUE) {
-    if ($showMessage) {
-        echo 'ERROR: ';
-        switch($exitCode) {
-            case t2tx_FNFORNOHTML:
-                echo 'not html or file not found';
-                break;
-            case t2tx_NOT2TXHTML:
-                echo 'not txt2tags-generated xhtml';
-                break;
-            case t2tx_NOBODY:
-                echo 'empty document body';
-                break;
-            case t2tx_BADLEVEL:
-                echo 'invalid maxLevel';
-                break;
-            case t2tx_BADCHAPTER:
-                echo 'invalid chapter content';
-                break;
-            case t2tx_NOCHAPTERS:
-                echo 'no chapters found';
-                break;
-            case t2tx_BADSECTION:
-                echo 'invalid section specified';
-                break;
-            default:
-                echo "undefined error $exitCode";
-        }
-        echo "\n";
-    }
-    exit ($exitCode);
 }
 
 /**
