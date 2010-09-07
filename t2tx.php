@@ -257,7 +257,7 @@ class Book {
         if (! $maxLevel) {
             $maxLevel = $this->_maxLevel;
         }
-        $nextHead = '(?:<a[^>]+></a>\n)?<h';
+        $nextHead = '(<a[^>]+></a>\n)?<h';
         if ($maxLevel == 1) {
             $nextHead .= '1';
         } else {
@@ -272,10 +272,14 @@ class Book {
 
         // extract chapters 1..n
         while ($body) {
-            preg_match("#^($nextHead.*?)(?=$nextHead|$)#s",
-                $body, $matches);
-            $chapters[] = new Chapter($matches[0]);
-            $body = trim(str_replace($matches[0], '', $body));
+            if (preg_match("#^($nextHead.*?)(?=$nextHead)#s",
+                    $body, $matches)) {
+                $chapters[] = new Chapter($matches[0]);
+                $body = trim(str_replace($matches[0], '', $body));
+            } else {
+                $chapters[] = new Chapter($body);
+                $body = '';
+            }
         }
     }
 
