@@ -24,14 +24,15 @@ error_reporting(E_ALL | E_STRICT);
  * global constants
  */
 define('t2tx_PROGID',
-    't2tx 1.0 by Peeter P. Mõtsküla <peeterpaul@motskula.net>');
-define('t2tx_FNFORNOHTML',  'not html or file not found');
-define('t2tx_NOT2TXHTML',   'not txt2tags-generated xhtml');
-define('t2tx_NOBODY',       'empty document body');
-define('t2tx_BADLEVEL',     'invalid maxLevel');
-define('t2tx_BADCHAPTER',   'invalid chapter content');
-define('t2tx_NOCHAPTERS',   'no chapters found');
-define('t2tx_BADSECTION',   'invalid section specified');
+    't2tx 1.1 by Peeter P. Mõtsküla <peeterpaul@motskula.net>');
+define('t2tx_FNFORNOHTML',      'not html or file not found');
+define('t2tx_NOT2TXHTML',       'not txt2tags-generated xhtml');
+define('t2tx_NOBODY',           'empty document body');
+define('t2tx_BADSPLITLEVEL',    'invalid splitLevel');
+define('t2tx_BADTOCLEVEL',      'invalid tocLevel');
+define('t2tx_BADCHAPTER',       'invalid chapter content');
+define('t2tx_NOCHAPTERS',       'no chapters found');
+define('t2tx_BADSECTION',       'invalid section specified');
 
 /**
  * Chapter of a book
@@ -108,7 +109,8 @@ class Chapter {
 class Book {
     protected $_html;
     protected $_filename;
-    protected $_maxLevel;
+    protected $_splitLevel;
+    protected $_tocLevel;
     protected $_bookName;
     protected $_htmlHead;
     protected $_title;
@@ -119,17 +121,28 @@ class Book {
 
     /*
      * @property string $content input filename or contents thereof
-     * @property int $maxLevel
-     *           smallest heading to break document into chapters
+     * @property int $splitLevel
+     *           deepest heading to break document into chapters (default 1)
+     * @property int $tocLevel
+     *           how many sublevels to include into table of contents
+     *           (default 1; 0 means all)
      */
-    public function __construct($content = NULL, $maxLevel = 1) {
-        // check $maxLevel
-        if ($maxLevel < 1 || $maxLevel > 6 || intval($maxLevel) != $maxLevel) {
-            throw new Exception(t2tx_BADLEVEL);
+    public function __construct($content = NULL, $splitLevel = 1,
+            $tocLevel = 1) {
+        // check $splitLevel
+        if ($splitLevel < 1 || $splitLevel > 6 ||
+                intval($splitLevel) != $splitLevel) {
+            throw new Exception(t2tx_BADSPLITLEVEL);
         } else {
-            $this->_maxLevel = $maxLevel;
+            $this->_splitLevel = $splitLevel;
         }
 
+        // check $tocLevel
+        if ($tocLevel < 0 || intval($tocLevel) != $tocLevel) {
+            throw new Exception(t2tx_BADTOCLEVEL);
+        } else {
+            $this->_tocLevel = ($tocLevel > 0 ? $tocLevel : 6);
+        }
         // do we have a file?
         if (file_exists($content)) {
             $this->_filename = $content;
@@ -152,7 +165,6 @@ class Book {
         
         // extract chapters
         $this->chapters();
-
     }
 
     /**
@@ -239,7 +251,7 @@ class Book {
     public function chapters() {
         if (! is_array($this->_chapters)) {
             $this->_getSections($this->body(), $this->_chapters,
-                $this->_maxLevel);
+                $this->_splitLevel);
         }
         return $this->_chapters;
     }        
@@ -249,19 +261,19 @@ class Book {
      * 
      * @param string $body content of input file's div#body
      * @param array $chapters chapter list to be populated
-     * @param int $maxLevel smallest heading to split input into chapters at
+     * @param int $splitLevel smallest heading to split input into chapters at
      * @return void
      */
-    protected function _getSections($body, &$chapters, $maxLevel = NULL) {
+    protected function _getSections($body, &$chapters, $splitLevel = NULL) {
         // set up nextHead;
-        if (! $maxLevel) {
-            $maxLevel = $this->_maxLevel;
+        if (! $splitLevel) {
+            $splitLevel = $this->_splitLevel;
         }
         $nextHead = '(<a[^>]+></a>\n)?<h';
-        if ($maxLevel == 1) {
+        if ($splitLevel == 1) {
             $nextHead .= '1';
         } else {
-            $nextHead .= "[1-$maxLevel]";
+            $nextHead .= "[1-$splitLevel]";
         }
 
         // extract chapter 0
@@ -304,7 +316,8 @@ class Book {
                     continue;
                 }
                 $chapNum++;
-                $this->_getSections($chapter->body(), $_chapters, 6);
+                $this->_getSections($chapter->body(), $_chapters,
+                    $this->_splitLevel + $this->_tocLevel);
                 foreach ($_chapters as $_chapter) {
                     if ($_chapter->level() == 0) {
                         continue;
@@ -404,25 +417,25 @@ class Book {
 /**
  * main block
  */
-if ($argc < 2 || $argc > 3) {
+if ($argc < 2 || $argc > 4) {
     echo <<<END
 t2tx - split XHTML pages created with txt2tags into multi-page "books"
 
 Usage:
-    t2tx docName.html [splitLevel]
+    t2tx docName.html [splitLevel [tocLevel]]
+        docName.html    - to be converted into docName-0.html .. docName-n.html
+        splitLevel      - deepest heading level to split into chapters
+        tocLevel        - how many levels of subchapters to include in TOC
 
-Files created:
-    docName-0.html      # table of contents and preamble if any
-    docName-1.html      # first chapter (input file is split into
-        ...             # chapters at headings no smaller than splitLevel)
-    docName-n.html      # last chapter
+See README.txt for more details.
 
 END;
     exit;
 }
 
 $input = $argv[1];
-$level = ($argc == 3 ? $argv[2] : 1);
-$book = new Book($input, $level);
+$splitLevel = ($argc > 2 ? $argv[2] : 1);
+$tocLevel = ($argc > 3 ? $argv[3] : 1);
+$book = new Book($input, $splitLevel, $tocLevel);
 $book->save();
 echo "Done, ", count($book->chapters()) - 1, " chapters.\n";

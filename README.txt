@@ -1,17 +1,18 @@
 t2tx - split XHTML pages created with txt2tags into multi-page "books"
 
 Usage:
-    t2tx docName.html [splitLevel]
+    t2tx docName.html [splitLevel [tocLevel]]
+        docName.html    - to be converted into docName-0.html .. docName-n.html
+        splitLevel      - deepest heading level to split into chapters
+                          (default: 1)
+        tocLevel        - how many levels of subchapters to include in TOC
+                          (default: 1; 0 means all)
 
-Input files:
-    Input files must have an extension .html and be created with txt2tags 2.5
-    using options -t xhtml and --css-sugar.
-
-Files created:
-    docName-0.html      # table of contents and preamble if any
-    docName-1.html      # first chapter (input file is split into
-        ...             # chapters at headings no smaller than splitLevel)
-    docName-n.html      # last chapter
+Notes:
+    * Input files must have an extension .html and be created with txt2tags 2.5
+      using options -t xhtml and --css-sugar.
+    * If you show subchapters in the TOC, then the anchors must already be
+      present in the input file.
 
 Installation:
     Copy t2tx.php into a directory on your PATH
