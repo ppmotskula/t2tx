@@ -5,7 +5,7 @@
  * 
  * @author Peeter P. Mõtsküla <peeterpaul@motskula.net>
  * @copyright (c) 2010 Peeter P. Mõtsküla
- * @version 1.0, 2010-09-06
+ * @version 1.1
  * @license New BSD license (http://opensource.org/licenses/bsd-license.php)
  *
  * Usage: see main block below or just call t2tx without parameters
@@ -111,6 +111,7 @@ class Book {
     protected $_filename;
     protected $_splitLevel;
     protected $_tocLevel;
+    protected $_bookPath;
     protected $_bookName;
     protected $_htmlHead;
     protected $_title;
@@ -168,11 +169,21 @@ class Book {
     }
 
     /**
+     * @return string full path to input file without .html extension
+     */
+    public function bookPath() {
+        if (! $this->_bookPath) {
+            $this->_bookPath = preg_replace('#\.html$#', '', $this->_filename);
+        }
+        return $this->_bookPath;
+    }
+
+    /**
      * @return string name of input file without .html extension
      */
     public function bookName() {
         if (! $this->_bookName) {
-            $this->_bookName = preg_replace('#\.html$#', '', $this->_filename);
+            $this->_bookName = preg_replace('#.*/#', '', $this->bookPath());
         }
         return $this->_bookName;
     }
@@ -365,15 +376,15 @@ class Book {
         // build navbar
         $navbar = '<div class="navbar" id="navbar">' . "\n" .
             '<table width="100%"><tr>' . "\n" .
-            '  <td align="left" width="33%">';
+            '  <td align="left" width="5%">';
         if ($section > 1) { # link to previous if exists
             $navbar .= '<a href="' .
                 $this->bookName() . '-' . ($section - 1) . '.html">' .
                 '&lt;&lt;</a>';
         }
-        $navbar .= "</td>\n" . '  <td align="center" width="34%"><a href="' .
+        $navbar .= "</td>\n" . '  <td align="center" width="90%"><a href="' .
             $this->bookName() . '-0.html">' . $this->title() . "</a></td>\n" .
-            '  <td align="right" width="33%">';
+            '  <td align="right" width="5%">';
         if ($section < count($this->_chapters) -1) { # link to next if exists
             $navbar .= '<a href="' .
                 $this->bookName() . '-' . ($section + 1) . '.html">' .
@@ -407,7 +418,7 @@ class Book {
                     $this->navbar($chapNum) .
                     "</body>\n</html>\n";
             }
-            file_put_contents($this->bookName() . "-$chapNum.html", $content);
+            file_put_contents($this->bookPath() . "-$chapNum.html", $content);
             $chapNum++;
         }
     }
